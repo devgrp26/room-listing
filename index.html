@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Listing</title>
+    <style>
+	body{
+	font-family:arial;
+	}
+        table,tr,td{
+            border:1px solid gray;
+            border-collapse: collapse;
+            padding:10px;
+        }
+		
+		
+		table{
+			position:relative;
+			border:hidden;
+		}
+		
+		th{
+			position:sticky;
+			top:0;
+			background-color:teal;
+			color:white;
+			border:1px solid gray;
+			z-index:9999;
+		}
+		
+        .dateLabel{
+            font-size:12px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+		
+		#view{
+			max-height:600px;
+			overflow:auto;
+		}
+		.header-div{
+		width:150px;
+		}
+		
+		.btn-status{
+			font-size:10px;
+			color:white;
+			background-color:blue;
+			cursor:pointer;
+			padding:5px;
+		}
+    </style>
+</head>
+<body>
+    <label>Date From:</label>
+    <input type="date" id="dateFrom">
+    <label>Date To:</label>
+    <input type="date" id="dateTo">
+    <br>
+    <input type="text" id="vGuest">
+	
+	<select id="reservation_status"></select>
+    <br>
+    <div id="view" ></div>
+<script>
+
+let reservation_status = document.getElementById('reservation_status')
+
+let guest_name = document.getElementById('vGuest').value
+
+let rooms = [
+		{name:'regular', guests:[]},
+		{name:'kubu', guests:[]},
+		{name:'deluxe', guests:[]},
+		{name:'villa', guests:[]},
+		{name:'poolside', guests:[]},
+		{name:'bayside', guests:[]},
+		{name:'smit', guests:[]},
+		{name:'green', guests:[]},
+		{name:'dormitory', guests:[]},
+       ]
+	   
+const _res_status = [
+	{id:1,name:`Tentative Booking`},
+	{id:2,name:`Confirmed Booking`},
+	{id:3,name:`Wait Listed`},
+	{id:4,name:`Cancelled Booking`},
+	{id:5,name:`Move-Room`},
+]
+
+reservation_status.innerHTML = _res_status.map(e=>{return `<option value="${e.id}">${e.name}</option>`})
+		
+let dFrom = document.getElementById('dateFrom')
+let dTo = document.getElementById('dateTo')
+
+const run = () =>{
+
+    let vdFrom = new Date(dFrom.value)
+    let vdTo = new Date(dTo.value)
+/* 
+    if(dFrom.getFullYear()!=dTo.getFullYear()) {
+        alert(`Date range must be the same year value`)
+        return
+    } */
+
+    const yr = [isNaN(parseInt(vdFrom.getFullYear())),isNaN(parseInt(vdTo.getFullYear()))]
+
+    //year must be equal
+    if(yr.indexOf(true)==-1){
+        
+        //month to must be greater than month from
+
+        if(vdTo.getMonth()<vdFrom.getMonth()){
+
+            alert(`month to must be greater than month from`)
+            return
+        }
+
+        calculateDays(vdFrom,vdTo)
+    }
+}
+
+const calculateDays= (dateFrom, dateTo)=>{
+
+    currentYear = dateFrom.getFullYear()
+
+    let begDate=0
+
+    let tr=[]
+    let g=[]
+    let n=[]
+    let isWeekend=false
+	let cust_names=[]
+    let h=0
+	
+	let header=[]
+	let vheader=[]
+	let final_header=[]
+    //loop rooms
+    rooms.forEach((item,index)=>{
+
+        n=[]
+		
+		
+        for(let mos = dateFrom.getMonth()+1; mos<=dateTo.getMonth()+1;mos++){
+
+            if(dateFrom.getMonth()-dateTo.getMonth()==0){
+                if(dateFrom.getDay()>dateTo.getDay()){
+                    alert(`Invalid day value`)
+                    break
+                    return
+                }
+            }
+
+            h=mos==dateTo.getMonth()+1 ? dateTo.getDate() : daysInMonth(mos,currentYear)
+			
+            g=[]
+			header=[]
+            //loop days
+            for(begDate = mos==dateFrom.getMonth()+1 ? dateFrom.getDate() : 1; begDate<=h;begDate++){
+
+                isWeekend = ['Saturday','Sunday'].indexOf(getDayName([mos,begDate,currentYear].join('/')))>=0 ? true : false
+
+				cust_names=[]
+
+				if(item.guests.length){
+					cust_names = get_customer_name(String([mos,begDate,currentYear].join('/')), item.guests)
+				}
+
+					//header part
+					header.push(`<th>
+						<div class="header-div">
+						${[mos,begDate,currentYear].join('/')}
+						<br>
+						${getDayName([mos,begDate,currentYear].join('/'))}
+						</div>
+					</th>`)
+				
+                g.push(`<td style="background-color:${isWeekend ? 'orange' : 'none'}; color: ${isWeekend ? 'blue' : 'teal'}">
+				
+						<input type="checkbox" onclick="assign(${index},'${item.name}','${[mos,begDate,currentYear].join('/')}')">
+						<br>
+						<table style="color:black;font-weight:bold">
+							<tbody>
+								${cust_names.length ? cust_names.map(v=>{return `<tr><td>${v.cust_name}</td><td>${get_status_name_by_id(parseInt(v.res_status))}</td></tr>`}).join('') : ''}
+							</tbody>
+						</table>
+						
+                    </td>`)
+
+            }
+			
+			
+			
+            n.push(g.join(''))
+			
+			vheader.push(header.join(''))
+        }
+        tr.push(`<tr><td>${item.name}</td>${n.join('')}</tr>`)
+		
+		
+		if(!final_header.length){
+			final_header.push(`<tr><th>Room Names</th>${vheader.join('')}</tr>`)
+		}
+		
+    })
+    document.getElementById('view').innerHTML = `<table>${final_header.join('')+tr.join('')}</table>`
+}
+
+/*${getDayName([mos,begDate,currentYear].join('/'))}
+					<br>
+					<span class="dateLabel">${[mos,begDate,currentYear].join('/')}</span>
+					*/
+
+const get_customer_name = (str_date, array_guests) =>{
+	
+	let cust_names=[]
+	let pos=null
+	array_guests.forEach((a,b)=>{
+		pos = a.reservation_dates.map(e=>e.date).indexOf(str_date)
+		if(pos!=-1){
+			cust_names.push({
+				cust_name:a.cust_name,
+				res_status: a.reservation_dates[pos].res_status
+			})
+		}
+	})
+	return cust_names
+}
+
+const get_status_name_by_id = (id) =>{
+	return _res_status.map(e=>e.id).indexOf(id)!=-1 ? `<button class="btn-status">${_res_status[_res_status.map(e=>e.id).indexOf(id)].name}</button>` : 'Error'
+}
+
+const assign = (roomIndex,roomName,resDate) =>{
+
+	if(document.getElementById('vGuest').value!=""){
+
+		const customer = {
+			cust_name:document.getElementById('vGuest').value,
+			reservation_date:resDate,
+			room_name:roomName,
+			res_status: parseInt(reservation_status.value)
+		}
+		
+		let cust_names = rooms[roomIndex].guests.map(e=>e.cust_name.toLowerCase())
+
+		const pos = cust_names.indexOf(customer.cust_name.toLowerCase())
+
+		//console.log(`Customer Name Position:${pos}`)
+
+		if(pos!=-1){
+			let res_dates = rooms[roomIndex].guests[pos].reservation_dates
+
+			let res_pos= res_dates.map(e=>e.date).indexOf(customer.reservation_date)
+			
+			//console.log(`Customer Reservation Date:${res_pos}`)
+
+			if(res_pos!=-1){
+				res_dates.splice(res_pos,1)
+				res_dates.push(
+					{
+						date:customer.reservation_date,
+						res_status:customer.res_status
+					}
+				)
+				rooms[roomIndex].guests[pos].reservation_dates = res_dates
+			}else{
+				res_dates.push(
+					{
+						date:customer.reservation_date,
+						res_status:customer.res_status
+					}
+				)
+				rooms[roomIndex].guests[pos].reservation_dates = res_dates
+			}
+		}else{
+			rooms[roomIndex].guests.push(
+				{
+				cust_name:customer.cust_name,
+				room_name:customer.room_name, 
+				reservation_dates:[{
+						date:customer.reservation_date,
+						res_status:customer.res_status
+					}]
+				}
+			)
+		}
+		
+		run()
+	}else{
+		alert(`Enter Guest Name!`)
+	}
+
+    console.log(rooms)
+}
+
+const weekOftheMonth = (strDate)=>{
+    const d = new Date(strDate);
+    const date = d.getDate();
+    const day = d.getDay();
+    return Math.ceil((date - 1 - day) / 7);
+    
+}
+
+const daysInMonth = (month, year) =>{
+    return new Date(year, month, 0).getDate();
+}
+
+const getDayName=(date, locale = 'en-US') => {
+  return new Date(date).toLocaleDateString(locale, {weekday: 'long'});
+}
+
+dFrom.onchange = ()=>{
+    run()
+}
+
+dTo.onchange = ()=>{
+    run()
+}
+   
+let currentDate = new Date();
+let cDay = currentDate.getDate();
+let cMonth = currentDate.getMonth() + 1;
+
+	let cYear = currentDate.getFullYear();
+	let dateNow = [cMonth,cDay,cYear].join('/')
+	console.log(dateNow);
+
+	console.log(`Get Day Name:${getDayName(dateNow)}`)
+
+	console.log(`Week of the month: ${weekOftheMonth(dateNow)}`)
+	console.log(`Days of the month: ${daysInMonth(cMonth,cYear)}`)
+
+    </script>
+</body>
+</html>

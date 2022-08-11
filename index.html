@@ -19,6 +19,7 @@
 		table{
 			position:relative;
 			border:hidden;
+			height:100px;
 		}
 		
 		th{
@@ -27,7 +28,16 @@
 			background-color:teal;
 			color:white;
 			border:1px solid gray;
-			z-index:9999;
+			z-index:999;
+			padding:10px;
+			
+		}
+		
+		.header-left{
+		left:0;
+		position:sticky;
+		background-color:teal;
+		z-index:9999;
 		}
 		
         .dateLabel{
@@ -36,7 +46,8 @@
         }
 		
 		#view{
-			max-height:600px;
+			min-height:600px;
+			max-height:90%;
 			overflow:auto;
 		}
 		.header-div{
@@ -46,7 +57,7 @@
 		.btn-status{
 			font-size:10px;
 			color:white;
-			background-color:blue;
+			
 			cursor:pointer;
 			padding:5px;
 		}
@@ -58,7 +69,7 @@
     <label>Date To:</label>
     <input type="date" id="dateTo">
     <br>
-    <input type="text" id="vGuest">
+    <input type="text" id="vGuest" value="Kilusang Mayo Uno c/o Att. Ted Tanada">
 	
 	<select id="reservation_status"></select>
     <br>
@@ -82,11 +93,11 @@ let rooms = [
        ]
 	   
 const _res_status = [
-	{id:1,name:`Tentative Booking`},
-	{id:2,name:`Confirmed Booking`},
-	{id:3,name:`Wait Listed`},
-	{id:4,name:`Cancelled Booking`},
-	{id:5,name:`Move-Room`},
+	{id:1,name:`Tentative Booking`, color:`gray`},
+	{id:2,name:`Confirmed Booking`, color:`blue`},
+	{id:3,name:`Wait Listed`, color:`teal`},
+	{id:4,name:`Cancelled Booking`, color:`red`},
+	{id:5,name:`Move-Room`, color:`orange`},
 ]
 
 reservation_status.innerHTML = _res_status.map(e=>{return `<option value="${e.id}">${e.name}</option>`})
@@ -98,11 +109,12 @@ const run = () =>{
 
     let vdFrom = new Date(dFrom.value)
     let vdTo = new Date(dTo.value)
-/* 
+	/* 
     if(dFrom.getFullYear()!=dTo.getFullYear()) {
         alert(`Date range must be the same year value`)
         return
-    } */
+    } 
+	*/
 
     const yr = [isNaN(parseInt(vdFrom.getFullYear())),isNaN(parseInt(vdTo.getFullYear()))]
 
@@ -169,7 +181,7 @@ const calculateDays= (dateFrom, dateTo)=>{
 				}
 
 					//header part
-					header.push(`<th>
+					header.push(`<th class="header-left">
 						<div class="header-div">
 						${[mos,begDate,currentYear].join('/')}
 						<br>
@@ -177,13 +189,11 @@ const calculateDays= (dateFrom, dateTo)=>{
 						</div>
 					</th>`)
 				
-                g.push(`<td style="background-color:${isWeekend ? 'orange' : 'none'}; color: ${isWeekend ? 'blue' : 'teal'}">
+                g.push(`<td style="background-color:${isWeekend ? 'orange' : 'none'}; color: ${isWeekend ? 'blue' : 'teal'}; cursor:pointer" onclick="assign(${index},'${item.name}','${[mos,begDate,currentYear].join('/')}')">
 				
-						<input type="checkbox" onclick="assign(${index},'${item.name}','${[mos,begDate,currentYear].join('/')}')">
-						<br>
 						<table style="color:black;font-weight:bold">
 							<tbody>
-								${cust_names.length ? cust_names.map(v=>{return `<tr><td>${v.cust_name}</td><td>${get_status_name_by_id(parseInt(v.res_status))}</td></tr>`}).join('') : ''}
+								${cust_names.length ? cust_names.map(v=>{return `<tr><td><div style="width:200px">${v.cust_name}</div></td><td>${get_status_name_by_id(parseInt(v.res_status))}</td></tr>`}).join('') : ''}
 							</tbody>
 						</table>
 						
@@ -197,11 +207,11 @@ const calculateDays= (dateFrom, dateTo)=>{
 			
 			vheader.push(header.join(''))
         }
-        tr.push(`<tr><td>${item.name}</td>${n.join('')}</tr>`)
+        tr.push(`<tr><th class="header-left">${item.name}</th>${n.join('')}</tr>`)
 		
 		
 		if(!final_header.length){
-			final_header.push(`<tr><th>Room Names</th>${vheader.join('')}</tr>`)
+			final_header.push(`<tr><th class="header-left">Room Names</th>${vheader.join('')}</tr>`)
 		}
 		
     })
@@ -230,7 +240,7 @@ const get_customer_name = (str_date, array_guests) =>{
 }
 
 const get_status_name_by_id = (id) =>{
-	return _res_status.map(e=>e.id).indexOf(id)!=-1 ? `<button class="btn-status">${_res_status[_res_status.map(e=>e.id).indexOf(id)].name}</button>` : 'Error'
+	return _res_status.map(e=>e.id).indexOf(id)!=-1 ? `<button class="btn-status" style="background-color:${_res_status[_res_status.map(e=>e.id).indexOf(id)].color}">${_res_status[_res_status.map(e=>e.id).indexOf(id)].name}</button>` : 'Error'
 }
 
 const assign = (roomIndex,roomName,resDate) =>{
